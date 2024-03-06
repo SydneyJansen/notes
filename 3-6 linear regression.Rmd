@@ -1,0 +1,102 @@
+---
+title: "3/6"
+author: "Sydney Jansen"
+date: "2024-03-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#ANOVA tables
+install.packages("ggpubr")
+library(ggpubr,tidyverse, mosiac)
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/zombies.csv"
+d <- read.csv(f, header = TRUE)
+m <- lm(data = d, height ~ weight)
+# height - mean(height)
+SSY <- sum((m$model$height - mean(m$model$height))^2)
+SSY
+# predicted height - mean height
+SSR <- sum((m$fitted.values - mean(m$model$height))^2)
+SSR
+# height - predicted height
+SSE <- sum((m$model$height - m$fitted.values)^2)
+SSE
+#mean square
+MSR <- SSR/1  # 1 wieght variable mean variance explained by the regression equation
+MSR
+MSE <- SSE/998  # 1000-2 mean remaining variance
+MSE
+MSY <- SSY/999  # 100-1 mean overall variance
+MSY
+#ratio of the vairnace explained by the regression model to the remaining unexplained variance
+fratio <- MSR/MSE
+fratio
+#p value associated wit a particular value of the F statistic is simply the area under the "F distribution"
+pf(q = fratio, df = 1, df2 = 998, lower.tail = FALSE)
+#or 1- (pf (q = fratio, df1 = 1, df = 998))
+#and now the quick way
+ a <- aov(data = d, height ~ weight)
+ m <- lm(data = d, height~ weight)
+ summary(a)
+ summary.aov(m)
+ #
+ summary(m)
+#it does this
+ rsq<-SSR/SSY
+rsq
+```
+```{r}
+
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/Street_et_al_2017.csv"
+d <- read.csv(f, header = TRUE)
+s <- d |> drop.na(ECV, Body_mass)
+mutate(logECV = log(ECV), logBM = log(Body_mass))
+(b1 <-cov(s$logECV, s$logBM)/var(s$logBM))
+(b0 <- mean(s$logECV) - b1 * mean(s$logBM))
+m <- lm(longECV ~ logBM, data = s
+#pulls out a table, a list of coofficients, from broom package        
+tidy(m)
+#derive ANOVA 
+SSY <- sum((s$logECV - mean(s$logECV))^2)
+SSR <- sum((m$fitted.values - mean(s$logECV))^2)
+SSE <- sum((s$logECV - m$fitted.values)^2)
+df_y <- nrow(s)-1
+df_r <- 1
+df_e <- nrow(s)-1-1
+MSR <- SSR/df_r 
+MSE <- SSE/df_e  
+MSY <- SSY/df_y 
+fratio <- MSR/MSE
+fratio
+pf(q = fratio, df = 1, df2 = 998, lower.tail = FALSE)
+ a <- aov(data = d, height ~ weight)
+ m <- lm(data = d, height~ weight)
+ summary(a)
+ summary.aov(m)
+  summary(m)
+ rsq<-SSR/SSY
+rsq
+ggplot(s, aes(x = logBM, y=logECV)) +
+  geom_point() +
+  #this adds regression line
+  geom_smooth(method = "lm")
+
+SSX <- sum((s$logBM - mean(s$logBM))^2)  # how much x variation there is
+SEbeta1 <- sqrt(MSE/SSX)
+SEbeta1
+
+0.784/.014
+```
+
+              
+

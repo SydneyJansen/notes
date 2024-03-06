@@ -1,0 +1,56 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+install.packages("lmodel2", "broom")
+install.packages("manipulate", "patchwork", "infer")
+library("tidyverse", "manipulate", "patchwork", "infer", "readr")
+
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/zombies.csv"
+d <- read.csv(f, header = TRUE)
+d <- mutate(d, centered_height = height - mean(height))
+d <- mutate(d, centered_weight = weight - mean(weight))
+
+p1 <- ggplot(data = d, aes(x = weight, y = height)) + geom_point()
+p2 <- ggplot(data = d, aes(x = centered_weight, y = centered_height)) + geom_point()
+
+p1 + p2
+}
+head(d)
+plot(data = d, height ~ weight)
+slope.test <- function(beta1, data) {
+    g <- ggplot(data = data, aes(x = centered_weight, y = centered_height))
+    g <- g + geom_point()
+    g <- g + geom_abline(intercept = 0, slope = beta1, size = 1, colour = "blue",
+        alpha = 1/2)
+    ols <- sum((data$centered_height - beta1 * data$centered_weight)^2)
+    g <- g + ggtitle(paste("Slope = ", beta1, "\nSum of Squared Deviations = ", round(ols,
+        3)))
+    g
+}
+manipulate(slope.test(beta1, data = d), beta1 = slider(-1, 1, initial = 0, step = 0.005))
+
+
+____________________
+
+
+f <- "https://github.com/difiore/ada-2024-datasets/blob/main/Street_et_al_2017.csv"
+d <- read.csv(f, col_names = TRUE)
+names(d)
+p<-ggplot()
+(b1<-cov(s$ECV, s$))
+summary(m_d)
+names(m_d)
+broom::tidy(m_d)
+p<-d%>%filter(Taxonomic_group == "Strepsirhini")
+m_p<- lm(ECV ~)
+m<-lm(formula = ECV ~ Group_size, data = d)
+m<- lm(ECV ~ Group_Size, d)
+```
+
