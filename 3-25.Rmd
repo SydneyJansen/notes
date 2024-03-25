@@ -1,0 +1,80 @@
+---
+title: "3-25 Multiple Regression and ANCOVA"
+author: "Sydney Jansen"
+date: "2024-03-25"
+output: html_document
+---
+Multiple Regression and ANCOVA
+```
+```
+
+
+
+```{r}
+install.packages("jtools")
+install.packages("car")
+library(tidyverse) 
+library(tidyverse)
+library(car)
+library(gridExtra)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/AVONETdataset1.csv"
+d <- read.csv(f, header = TRUE)
+d<-d|> dplyr::select(c("Species1", "Family1", "Order1", "Beak.Width", "Beak. Depth", "Tarsus. Length", "Wing.Length", "Tail.Length", "Mass", "Habitat", "Migration", "Trophic. Level", "Trophic.Niche", "Min. Latitude", "Max. Latitude", "Centroid .Latitude", "Range.Size"))
+#Which variables are categorical? How many levels? 
+glimpse(d)
+ggplot (data = d |> drop_na (Trophic. Level), aes (x = Trophic. Level, y = log(Mass))) + geom\ boxplot()+geom\ jitter()
+ggplot(data = d |> drop_na (Migration), as.factor (Migration), y =log(Mass))) + geom_boxplot() aes ( x =
+#Create a variable that is relative 
+a0 <- aov(relBL~1, data = p) #null
+a1 <- aov(relBL~Primary.Lifestyle, data = p)
+a2< aov (relBL~Trophic.Level,data = p)
+ggplot(data=p, aes(x=Primary.Lifestyle, y=relBL))
+geom_boxplot()+
+geom_jitter(alpha = 0.05)
+
+ggplot(data=p, aes(x=Trophic.Level, y=relBL))
+geom_boxplot()+
+  facet_wrap(~Primary.Lifestyle)+
+geom_jitter(alpha = 0.05)
+#another way to do it? 
+interaction.plot(
+  x.factor = p$Primary.Lifestyle,
+  xlab = "Primary.Lifestyle",
+  trace.factor = p$Trophic.Level,
+  trace.label = "Trophic.Level",
+  response = p$relBL,
+  ylab = "Mean Relative Beak Length"
+)
+#Step 6?
+a3<- aov(relBl ~ Trophic.Level + Primary.Lifestyle, data = p)
+a4<- aov(relBl~ Trophic.Level + Primary.Lifestyle + Trophic.Level:Primary.Lifesyle, data = p)
+#include the interaction term
+a5<- aov(relBl~ Trophic.Level * Primary.Lifestyle * as.factor(Migration), data = p)
+summary(a4#5 etc)
+#testing the models to one another
+anova(a0,a1,test = "F")
+#
+
+
+
+
+#Run a ANOVA analyses to look at wherther and how log(geographic range size) varies with migration style
+#Limit data to Passeriformes
+#Run ANOVA analyses to llok at the association between [1] relative beakl length and primary lifestyle and between [2] relative beak length and trophic level
+Regression with categorical predictors (anova).
+
+
+
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
