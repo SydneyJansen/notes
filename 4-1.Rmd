@@ -1,0 +1,61 @@
+---
+title: "4-1"
+author: "Sydney Jansen"
+date: "2024-04-01"
+output: html_document
+---
+```{r}
+install.packages("jtools")
+install.packages("car")
+library(tidyverse) 
+library(tidyverse)
+library(car)
+library(gridExtra)
+```
+
+```{r}
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/AVONETdataset1.csv"
+d <- read.csv(f, header = TRUE)
+d<- d |> dplyr::select(c("Species1", "Family1", "Order1", "Beak.Length_Culmen", "Beak.Width", "Beak.Depth", "Tarsus.Length", "Wing.Length", "Tail.Length", "Mass", "Habitat", "Migration", "Trophic.Level", "Trophic.Niche",
+  "Primary.Lifestyle", "Min.Latitude", "Max.Latitude", "Centroid.Latitude", "Range.Size", "Tarsus.Length"))
+d <- d |> mutate (logMass = log (Mass),
+              logRS = log(Range.Size),
+              logBeak= log(Beak.Length_Culmen),
+              logTarsus = log(Tarsus.Length),
+              Migration = as.factor (Migration))
+#Let's Compare
+m1 <- lm(data = d, logBeak ~ logRS * Migration) # full model
+m2 <- lm(data = d, logBeak ~ logRS + Migration) # model
+m3 <- lm(data = d, logBeak ~ logRS) # model with one predictor
+m4<- lm(data = d, logBeak ~ Migration) # model with one predictor
+m5<- lm(data = d, logBeak ~ 1) #intercept only model
+
+#create new dataframe where you don't have all the variables present
+lm(data = d_new, logBeak ~ logRS + Migration + Trophic.Level + logTaursus + Primary.Lifestyle) #not complete don't know how to create d_new
+#backward selection
+m_null <- lm(data = d, logBeak ~ 1)
+m1<- update(m1, scope = .~. + Primary.Lifestyle)
+summary(m1)
+#add1(m_null, scope = .~. + logRS + Migration + Trophic.Level + Primary.Lifestyle, test="F") 
+
+add1(m1, scope = .~. + logRS + Migration + Trophic.Level + Primary.Lifestyle, test="F") #explanatory model
+m2<-update(m1, formula = .~. + logRS)
+summary(m2)
+
+..............
+```
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -29,8 +29,8 @@ d <- read.csv(f, header = TRUE)
 d<-d|> dplyr::select(c("Species1", "Family1", "Order1", "Beak.Width", "Beak. Depth", "Tarsus. Length", "Wing.Length", "Tail.Length", "Mass", "Habitat", "Migration", "Trophic. Level", "Trophic.Niche", "Min. Latitude", "Max. Latitude", "Centroid .Latitude", "Range.Size"))
 #Which variables are categorical? How many levels? 
 glimpse(d)
-ggplot (data = d |> drop_na (Trophic. Level), aes (x = Trophic. Level, y = log(Mass))) + geom\ boxplot()+geom\ jitter()
-ggplot(data = d |> drop_na (Migration), as.factor (Migration), y =log(Mass))) + geom_boxplot() aes ( x =
+ggplot (data = d |> drop_na (Trophic.Level), aes (x = Trophic.Level, y = log(Mass))) + geom_boxplot()+geom_jitter()
+ggplot(data = d |> drop_na (Migration), aes(x= as.factor (Migration), y =log(Mass))) + geom_boxplot() 
 #Create a variable that is relative 
 a0 <- aov(relBL~1, data = p) #null
 a1 <- aov(relBL~Primary.Lifestyle, data = p)
