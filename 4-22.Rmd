@@ -1,0 +1,194 @@
+---
+title: "Building Interactive Web Apps"
+author: "Sydney Jansen"
+date: "2024-04-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+install.packages(shiny)
+install.packages(DT)
+library(tidyverse)
+library(shiny)
+library(DT)
+```
+
+## Skeleton Application 
+
+```{r}
+# Load the necessary library
+library(shiny)
+#Loading in a Data from a File here if you want it to load in 1 time
+# Define the UI
+ui <- fluidPage(
+  titlePanel(h1("My First Web App")),
+  
+  # Sidebar layout with input and output definitions
+  sidebarPanel(
+    img(src="pvz-zombie1.png", width=100, style="text-align:center"), # Ensure the image is in a folder named "www" in your app directory
+    br(),
+    br(),
+    actionButton("submit", "SUBMIT"),
+    selectInput(
+      "favorite_monster",
+      label = "Choose one of the following...",
+      choices = c("Zombie", "Vampire", "Alien", "Werewolf"),
+      selected = "Zombie"
+    ),
+    style="text-align:center"
+  ),
+  
+  # Main panel for displaying outputs
+  mainPanel(
+    h3("Wow, I'm creating a webpage and web server!"),
+    h4("This is really cool.", style="color:blue; text-align:center"),
+    textOutput("favorite_monster")
+  )
+)
+
+# Define server logic
+server <- function(input, output) {
+  output$favorite_monster <- renderText({
+    paste0("You have selected... ", input$favorite_monster)
+  })
+}
+
+# Run the app
+shinyApp(ui = ui, server = server)
+
+```
+
+```{r}
+#new shiny page
+library(shiny)
+library(DT)
+library(tidyverse)
+library(broom)
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/zombies.csv"
+d <- read_csv(f, col_names = TRUE)
+d <- select(d, height, weight, age, gender, major)
+d$gender <- factor(d$gender)
+d$major <- factor(d$major)
+r <- c("height", "weight", "age") #vector of these variables, allow to be response variables for the LM we want to generate
+p <- names(d) #predictor variables
+
+
+ui <- fluidPage(
+  titlePanel(h1("Simple LM Visualizer")),
+  
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        "response",
+        label = "Choose a response variable...",
+        choices = c("", r)  
+      ),
+      selectInput(
+        "predictors",
+        label = "Choose one or more predictor variables...",
+        choices = c(p),  
+        multiple = TRUE
+      ),
+      textOutput("model"),
+      tableOutput("modelresults")
+    ),
+    mainPanel(
+      width = 7,
+      dataTableOutput("datatable"),
+      plotOutput("plot")
+    )
+  )
+)
+
+server <- function(input, output) {
+  m <- reactive({
+    mod <- NULL
+    if (input$response == "" | length(input$predictors) == 0) {
+        return(mod)
+    }
+    mod <- paste0(input$response, " ~ ", input$predictors[1])
+    if (length(input$predictors) > 1) {
+        for (i in 2:length(input$predictors)) {
+            mod <- paste0(mod, " + ", input$predictors[i])
+        }
+    }
+    return(mod)
+})
+  # Assume 'd' is your data frame or data table object
+  output$datatable <- renderDataTable({
+    datatable(d, options = list(
+      paging = TRUE,
+      lengthMenu = list(c(5, 10, 25, -1), c('5', '10', '25', 'All')),
+      pageLength = 5
+    ))
+  })
+  output$modelresults <- renderTable({
+    if (!is.null(m())) {
+        res <- lm(data = d, formula = m())
+        res <- as.data.frame(coefficients(res))
+        names(res) <- "Beta"
+        res
+    }
+}, width = "100%", rownames = TRUE, striped = TRUE, spacing = "s", bordered = TRUE,
+    align = "c", digits = 3)
+  output$model <- renderText({
+    paste0("Model: ", print(m()))
+})
+  output$modelresults <- renderTable({
+    if (!is.null(m())) {
+        res <- lm(data = d, formula = m())
+        tidy(res) |>
+            select(term, estimate, p.value)
+    }
+}, width = "100%", rownames = TRUE, striped = TRUE, spacing = "s", bordered = TRUE,
+    align = "c", digits = 3)
+  output$plot <- renderPlot({
+    if (!is.null(m()) & length(input$predictors) == 1) {
+        y <- input$response
+        x <- input$predictors
+        if (class(d[[x]]) != "factor") {
+            p <- ggplot(data = d, aes(x = .data[[x]], y = .data[[y]])) + geom_point() +
+                geom_smooth(method = lm)
+        } else {
+            p <- ggplot(data = d, aes(x = .data[[x]], y = .data[[y]])) + geom_violin() +
+                geom_jitter(width = 0.2, alpha = 0.5)
+        }
+        p <- p + xlab(x) + ylab(y) + theme(axis.text.x = element_text(angle = 90,
+            hjust = 1))
+        p
+    } else if (!is.null(m()) & length(input$predictors) == 2) {
+        y <- input$response
+        x <- input$predictors
+        if (class(d[[x[1]]]) == "factor" & class(d[[x[2]]]) == "factor") {
+            p <- ggplot(data = d, aes(x = .data[[x[1]]], y = .data[[y]])) + geom_violin() +
+                geom_jitter(width = 0.2, alpha = 0.5) + facet_wrap(~d[[x[2]]])
+            p <- p + xlab(x[1]) + ylab(y)
+        } else if (class(d[[x[1]]]) != "factor" & class(d[[x[2]]]) == "factor") {
+            p <- ggplot(data = d, aes(x = .data[[x[1]]], y = .data[[y]])) + geom_point() +
+                geom_smooth(method = lm) + facet_wrap(~d[[x[2]]])
+            p <- p + xlab(x[1]) + ylab(y)
+        } else if (class(d[[x[1]]]) == "factor" & class(d[[x[2]]]) != "factor") {
+            p <- ggplot(data = d, aes(x = .data[[x[2]]], y = .data[[y]])) + geom_point() +
+                geom_smooth(method = lm) + facet_wrap(~d[[x[1]]])
+            p <- p + xlab(x[2]) + ylab(y)
+        } else {
+            p <- NULL
+        }
+        p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+        p
+    }
+})
+}
+
+shinyApp(ui = ui, server = server)
+```

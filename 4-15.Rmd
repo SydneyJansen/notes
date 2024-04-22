@@ -1,0 +1,300 @@
+---
+title: "Mixed Effects Modeling"
+author: "Sydney Jansen"
+date: "2024-04-22"
+output: html_document
+---
+
+In a general or generalized linear "mixed effects" models **(GLMM)**, we have a response variable, Y, and observations that fall into different factor categories, each with some set of levels (e.g., "sex," with levels "male" and "female", "individual", with different individual names), and we are interested in the effects of the various factors and factor levels on the response variable. 
+
+We can conceptualize these effects as being either **fixed** or **random**. Fixed factors are those that reflect all levels of interest in our study, while random effects are those that represent nly a sample of the levels of interest. 
+
+```{r message=FALSE}
+library(readr)
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/chimpgrooming.csv"
+d <- read_csv(f, col_names = TRUE)
+```
+
+Suppose we're interested in how reproductive condition and parity influence how much grooming a female receives. 
+
+Mixed effects model deals with situation by adding **subject ID** as a random effect in our model. Doing so allows us to address the non-independence issue by estimating **different sets of parameters** for each level of the factor "subject." We can do two kinds of mixed effects models:
+
+Estimate a different intercept for each subject  
+Estimate a different intercept and slope for each subject 
+
+Plot grooming received duration in relation to subject ID
+
+```{r}
+library(ggplot2)
+(p <- ggplot(data = d, aes(x = subject, y = duration)) +
+  geom_boxplot()) +
+  xlab("Subject") + ylab("Duration") +
+  theme_classic()
+```
+
+Plot grooming received in relation to reproductive condition 
+
+```{r}
+(p <- ggplot(data = d, aes(x = reprocondition, y = duration)) +
+  geom_boxplot()) +
+  xlab("Reproductive Conditiont") + ylab("Duration") +
+  theme_classic()
+```
+
+Plot grooming received in relation to reproductive condition *and* parity
+
+```{r}
+(p <- ggplot(data = d, aes(x = reprocondition, y = duration, fill = factor(parity))) +
+  geom_boxplot() + 
+   xlab("Reproductive Condition") +
+   labs(fill = "parity") + 
+   theme(axis.text.x = element_text(angle = 90)) +
+   theme_classic())
+```
+
+
+Overall we see: lots of individual variation in how much grooming is received, variation in response to reproductive condition, limited variation due to parity, variation in response to this combination of mixed effects 
+
+Plot grooming received into relation to both reproductive condition and subject ID
+
+```{r}
+(p <- ggplot(data = d, aes(x = reprocondition, y = duration, fill = factor(subject))) +
+    geom_boxplot() + xlab("reproductive condition") + labs(fill = "subject") + theme(axis.text.x = element_text(angle = 90)))
+```
+
+## Random Intercept Model (Parallel Slopes)
+
+```{r message=FALSE}
+library(lme4)
+```
+
+Function lmer() is the mixed model equivalent of lm()
+
+```{r}
+m <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject))
+summary(m)
+coef(m)
+```
+
+
+### Inference using LRTs
+
+```{r}
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject), REML = FALSE)
+reduced <- lmer(data = d, duration ~ parity + (1 | subject), REML = FALSE)
+anova(reduced, full, test = "Chisq")
+```
+
+Adding productive condition in significantly increases explanatory power of the model 
+
+we run with REML = FALSE because we will be comparing models with different "fixed" effects
+
+### Random Slopes Model 
+
+We can also allow that relationship between the response variable and predictor variable(s) to **vary from subject to subject**. 
+
+The notation (1 + fixed | random) tells the model to estimate differing baseline levels of the response as well as differing responses to the fixed factor in question 
+
+```{r}
+m <- lmer(data = d, duration ~ reprocondition + parity + (1 + reprocondition|subject) + (1 + parity|subject), REML = FALSE)
+summary(m)
+```
+
+---
+title: "Mixed Effects Modeling"
+author: "Claire Brandes"
+date: "April 10, 2024"
+output: 
+  html_document: 
+    highlight: tango
+---
+
+In a general or generalized linear "mixed effects" models **(GLMM)**, we have a response variable, Y, and observations that fall into different factor categories, each with some set of levels (e.g., "sex," with levels "male" and "female", "individual", with different individual names), and we are interested in the effects of the various factors and factor levels on the response variable. 
+
+We can conceptualize these effects as being either **fixed** or **random**. Fixed factors are those that reflect all levels of interest in our study, while random effects are those that represent nly a sample of the levels of interest. 
+
+```{r message=FALSE}
+library(readr)
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/chimpgrooming.csv"
+d <- read_csv(f, col_names = TRUE)
+```
+
+Suppose we're interested in how reproductive condition and parity influence how much grooming a female receives. 
+
+Mixed effects model deals with situation by adding **subject ID** as a random effect in our model. Doing so allows us to address the non-independence issue by estimating **different sets of parameters** for each level of the factor "subject." We can do two kinds of mixed effects models:
+
+Estimate a different intercept for each subject  
+Estimate a different intercept and slope for each subject 
+
+Plot grooming received duration in relation to subject ID
+
+```{r}
+library(ggplot2)
+(p <- ggplot(data = d, aes(x = subject, y = duration)) +
+  geom_boxplot()) +
+  xlab("Subject") + ylab("Duration") +
+  theme_classic()
+```
+
+Plot grooming received in relation to reproductive condition 
+
+```{r}
+(p <- ggplot(data = d, aes(x = reprocondition, y = duration)) +
+  geom_boxplot()) +
+  xlab("Reproductive Conditiont") + ylab("Duration") +
+  theme_classic()
+```
+
+Plot grooming received in relation to reproductive condition *and* parity
+
+```{r}
+(p <- ggplot(data = d, aes(x = reprocondition, y = duration, fill = factor(parity))) +
+  geom_boxplot() + 
+   xlab("Reproductive Condition") +
+   labs(fill = "parity") + 
+   theme(axis.text.x = element_text(angle = 90)) +
+   theme_classic())
+```
+
+
+Overall we see: lots of individual variation in how much grooming is received, variation in response to reproductive condition, limited variation due to parity, variation in response to this combination of mixed effects 
+
+Plot grooming received into relation to both reproductive condition and subject ID
+
+```{r}
+(p <- ggplot(data = d, aes(x = reprocondition, y = duration, fill = factor(subject))) +
+    geom_boxplot() + xlab("reproductive condition") + labs(fill = "subject") + theme(axis.text.x = element_text(angle = 90)))
+```
+
+## Random Intercept Model (Parallel Slopes)
+
+```{r message=FALSE}
+library(lme4)
+```
+
+Function lmer() is the mixed model equivalent of lm()
+
+```{r}
+m <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject))
+summary(m)
+coef(m)
+```
+
+
+### Inference using LRTs
+
+```{r}
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject), REML = FALSE)
+reduced <- lmer(data = d, duration ~ parity + (1 | subject), REML = FALSE)
+anova(reduced, full, test = "Chisq")
+```
+
+Adding productive condition in significantly increases explanatory power of the model 
+
+we run with REML = FALSE because we will be comparing models with different "fixed" effects
+
+### Random Slopes Model 
+
+We can also allow that relationship between the response variable and predictor variable(s) to **vary from subject to subject**. 
+
+The notation (1 + fixed | random) tells the model to estimate differing baseline levels of the response as well as differing responses to the fixed factor in question 
+
+```{r}
+m <- lmer(data = d, duration ~ reprocondition + parity + (1 + reprocondition|subject) + (1 + parity|subject), REML = FALSE)
+summary(m)
+```
+
+### Inference Using AIC
+
+Installing necessary package:
+
+```{r}
+package_url <- "https://cran.r-project.org/src/contrib/Archive/AICcmodavg/AICcmodavg_2.3-1.tar.gz"
+# install.packages(package_url, repos = NULL, type = "source")
+```
+
+Calculating AICc
+
+```{r}
+# random factors only
+null <- lmer(data = d, duration ~ (1 + reprocondition | subject) + (1 + parity |
+    subject), REML = FALSE)
+# full model with both fixed effects
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 + reprocondition |
+    subject) + (1 + parity | subject), REML = FALSE)
+# model without reproductive condition as a fixed effect
+minusRC <- lmer(data = d, duration ~ parity + (1 + reprocondition | subject) + (1 +
+    parity | subject), REML = FALSE)
+# model without parity as a fixed effect
+minusP <- lmer(data = d, duration ~ reprocondition + (1 + reprocondition | subject) +
+    (1 + parity | subject), REML = FALSE)
+# p value for reproductive condition as a fixed effect
+anova(minusRC, full, test = "Chisq")
+```
+
+AIC table:
+
+```{r}
+(aic_table <- aictab(list(full, minusRC, minusP, null), modnames = c("full", "minusRC", "minusP", "null"), sort = TRUE))
+```
+
+## Challenge: Combining generalized and mixed effects models = GLMM
+
+Reading in data set:
+
+```{r message=FALSE}
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/Bowden-ParryOtterdata.csv"
+d <- read_csv(f, col_names = TRUE)
+```
+
+Create a new random variable that joins the variables "zoo" and "trialorder" 
+
+```{r}
+d <- d %>% mutate(
+  trial = paste0(zoo, trialorder))
+```
+
+Create a new random variable that is simply an observation number or ID
+
+```{r}
+d <- rowid_to_column(d, var = "obs")
+```
+
+Rename "TotalSharebothharasspro" as "Shared"
+
+```{r}
+d <- d %>% rename(Shared = TotalSharebothharasspro)
+```
+
+Rename "begreceived" as "BegReceived"
+
+```{r}
+d <- d %>% rename(BegReceived = begreceived)
+```
+
+Plot total food transferred (Shared) in realtion to begging received (BegReceived)
+
+```{r}
+ggplot(d, aes(x = BegReceived, y = Shared)) +
+  geom_point() +
+  xlab("Begging Received (total number)") +
+  ylab("Food Transfers (total number") +
+  theme_classic() +
+  theme(text = element_text(size = 12))
+```
+
+**Model 1:** Does the amount of begging received influence sharing frequency?
+
+```{r}
+m <- glmer(Shared ~
+             BegReceived +
+             offset(log(trialduration/60)) +
+             (1 | ID) +
+             (1 | trial) +
+             (1 | obs),
+           data = d,
+           family = poisson(link = log))
+summary(m)
+```
+
+P-value is tiny so reject null hypothesis that begging received has no influence on food sharing. 
