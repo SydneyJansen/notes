@@ -28,7 +28,7 @@ d <- read_csv(f, col_names = TRUE)
 Winnowing data set
 
 ```{r}
-d <- d %>% select("Species1",
+d <- d |> select("Species1",
                   "Family1",
                   "Order1",
                   "Beak.Length_Culmen",

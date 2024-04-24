@@ -1,0 +1,134 @@
+---
+title: "4-24"
+author: "Sydney Jansen"
+date: "2024-04-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r }
+easypackages::libraries("tidyverse", "sp", "sf", "cowplot", "tmap", "adehabitatHR", "rgdal")
+library(dplyr)
+library(ggplot2)
+```
+
+```{r }
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/spider_monkeys.csv"
+d <- read_csv(f, col_names = TRUE)
+
+# define the projection and plot focal points
+crs_original <- "+proj=longlat +datum=WGS84"
+coordinates(d) <- c("Longitude", "Latitude")  # x, y values represent the longitude and latitude, respectively and match the names of the fields in our original data table.
+proj4string(d) <- CRS(crs_original)  #what is the projection? note that the data need to have an initial projection assigned in order to be transformed; here we know that our initial coordinates are in latitude-longitude
+crs_target <- "+proj=utm +zone=18 + south +datum=WGS84 +units=m" #define a new coordinate reference system
+d_sp <- spTransform(d, CRS(crs_target)) #transform old data to specify our new data 
+d_sf <- st_as_sf(d_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+plot(d_sp, pch = 19, main = "Focal Points")
+#We can also ask R to confirm that these points are indeed projected or examine a summary of our sp object.
+is.projected(d_sp)
+summary(d_sp)
+
+d_sp$Group_Size <- str_count(d_sp$Composition, "/") #defining new variable in data frame
+fivenum(d_sp$Group_Size)
+mean(d_sp$Group_Size)
+```
+
+```{r}
+# point data for trees through 2012
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/trees_2012.csv"
+trees <- read_csv(f, col_names = TRUE)
+head(trees)
+coordinates(trees) <- c("FINAL_LON", "FINAL_LAT")
+proj4string(trees) <- CRS("+proj=longlat +datum=WGS84")
+trees_sp <- spTransform(trees, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+trees_sf <- st_as_sf(trees_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m")) #convert the file st to sp simple format
+plot(trees_sp, pch = 19, main = "Feeding Trees")
+
+# point data for TBS field station
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/TBS_coordinates.csv"
+station <- read_csv(f, col_names = TRUE)
+coordinates(station) <- c("Longitude", "Latitude") #specify coodinates
+proj4string(station) <- CRS("+proj=longlat +datum=WGS84") #specify string
+station_sp <- spTransform(station, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))#transforming
+station_sf <- st_as_sf(station_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+
+# point data for the mineral lick
+f <- "https://raw.githubusercontent.com/difiore/ada-2024-datasets/main/mineral_lick.csv"
+mineral_lick <- read_csv(f, col_names = TRUE)
+head(mineral_lick)
+mineral_lick_sf <- st_as_sf(mineral_lick, coords = c("x_proj", "y_proj"), crs = 32718)
+mineral_lick_sp <- as(mineral_lick_sf, "Spatial")
+# load shapefile for Ecuador, convert to sp/sf
+f <- "ec_provinces.shp"
+ecuador <- st_read(f)
+ecuador_sp <- as(ecuador, "Spatial")
+proj4string(ecuador_sp) <- CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m")
+ecuador_sf <- st_as_sf(ecuador_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m")) #recasted in back from sf to sp format
+
+# Load and project shapefile for the TBS trail system, convert to sp/sf
+f <- "trails.shp"
+trails <- st_read(f)
+trails_sp <- as(trails, "Spatial")
+proj4string(trails_sp) <- CRS("+proj=longlat +datum=WGS84") #transform lat and long to the sp format
+trails_sp <- spTransform(trails_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+trails_sf <- st_as_sf(trails_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+
+# load and project shapefile for the Tiputini River, convert to sp/sf
+f <- "rio tiputini.shp"
+rio <- st_read("rio tiputini.shp")
+
+rio_sp <- as(rio, "Spatial")
+proj4string(rio_sp) <- CRS("+proj=longlat +datum=WGS84")
+rio_sp <- spTransform(rio_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+rio_sf <- st_as_sf(rio_sp, CRS("+proj=utm +zone=18 + south +datum=WGS84 +units=m"))
+
+#all these examples are to show that all different ways these files present locational data (Coordinate Reference System) must be formatted to sp because ARCGIS is like that so now we can plot
+
+# plot TBS point over Ecuador Shapefile and TBS point over trail and river
+# shapefiles using ggplot() and sf objects
+
+p1 <- ggplot() + geom_sf(data = ecuador_sf) + geom_sf(data = rio_sf, color = "blue") +
+    geom_sf(data = station_sf, color = "red") + xlab("Longitude") + ylab("Latitude") +
+    ggtitle("TBS, Ecuador") + coord_sf(crs = 32718)
+
+p2 <- ggplot() + geom_sf(data = trails_sf) + geom_sf(data = rio_sf, color = "blue") +
+    geom_sf(data = station_sf, color = "red") + xlab("Longitude") + ylab("Latitude") +
+    ggtitle("TBS trail system \n and Tiputini river") + coord_sf(crs = 32718)
+
+cowplot::plot_grid(p1, p2, ncol = 2) #plot grid
+
+# plot (spider monkey) focal points over trail and river shapefiles 
+
+p3 <- ggplot() + geom_sf(data = trails_sf) + geom_sf(data = rio_sf, color = "blue") +
+    geom_sf(data = d_sf, color = "red") + xlab("Longitude") + ylab("Latitude") +
+    ggtitle("Focal points with trail system \n and Tiputini river") + coord_sf(crs = 32718)
+
+p3
+```
+
+```{r Generating Home Ranges}
+# calculate home range area MCP method (Estimating the range by encompassing where the animals are)
+polygon <- mcp(d_sp, percent = 100)  #set to 100% to include all points #mcp() function calculates the smallest convex polygon enclosing all the relocations (points) of the animal (or group); this polygon is then considered the home range.
+plot(polygon, main = "Home Range, MCP method, 100%")
+# or
+ggplot(st_as_sf(polygon)) + geom_sf(alpha = 0.5)
+polygon95 <- mcp(d_sp, percent = 95)
+plot(polygon95, main = "Home Range, MCP method, 95%")
+# kernelUD method
+hr_kernel <- kernelUD(d_sp)
+hr_kernel95 <- getverticeshr(hr_kernel, percent = 95)
+plot(hr_kernel95, main = "Home Range, kernelUD method, 95%")
+# or to superimpose the points
+ggplot(st_as_sf(hr_kernel95)) + geom_sf(alpha = 0.5) + geom_sf(data = st_as_sf(d_sp),
+    aes(geometry = geometry), alpha = 0.3)
+
+```
